@@ -3,11 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "verify": "node --experimental-strip-types scripts/verify.ts",
     "decode": "node --experimental-strip-types scripts/decode.ts",
-    "test": "node --experimental-strip-types --test test/*.test.ts"
+    "test": "node --experimental-strip-types --test test/*.test.ts",
+    "verify:tamper": "node --experimental-strip-types scripts/tamper.ts"
   },
   "dependencies": {
     "viem": "^2.21.0"

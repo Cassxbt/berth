@@ -1,0 +1,23 @@
+{
+  "_": "Every number and address in the README is an assertion here. If the two disagree, this file and the chain are right.",
+  "wallet": "0x3db6f359d9219f0c7348e20481c08e8440220cb2",
+  "burn": {
+    "chain": "baseSepolia",
+    "tx": "0xd1a6fe7e3d3f4e945e5c03d3911dcb678c6ba1eedad2e574b4eb2ce5df026414",
+    "innerSelector": "0x779b432d",
+    "amount": "1000000"
+  },
+  "mint": {
+    "chain": "ethSepolia",
+    "tx": "0xf69a9b4f4b8e685c7ed2e6d693358bcfdb2fab57521bf1b247d3b75ecaa6690a",
+    "innerSelector": "0x57ecfd28"
+  },
+  "eventNonce": "0xe1bb48de68ab582c021cb03abe95a1090a1e77720c65e8456a7337293a836f10",
+  "hookSelector": "0x3a537b0c",
+  "expectMinted": true,
+  "probeCallers": [
+    "0x000000000000000000000000000000000000dEaD",
+    "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+    "0x0000000000000000000000000000000000000001"
+  ]
+}
