@@ -1,0 +1,21 @@
+node_modules/
+dist/
+*.log
+
+# secrets and credentials - never commit
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+.kh_key
+**/secrets/
+
+# local scratch, planning and handoffs - never commit
+scratch/
+notes/
+planning/
+handoff*
+*.handoff.md
+*.local.md
+.DS_Store
