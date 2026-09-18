@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Berth — exclusive cross-chain delivery</title>
+<meta name="description" content="A CCTP burn only one address is permitted to complete, and that address is a KeeperHub wallet.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="nav"><div class="wrap nav-inner">
+  <a class="brand" href="./">Berth</a>
+  <nav class="nav-links">
+    <a href="./" data-p="index">Overview</a>
+    <a href="mechanism.html" data-p="mechanism">Mechanism</a>
+    <a href="proof.html" data-p="proof">Proof</a>
+    <a href="faq.html" data-p="faq">FAQ</a>
+    <a href="https://github.com/Cassxbt/berth">GitHub</a>
+  </nav>
+</div></div>
+
+<main class="wrap">
+
+  <section class="hero">
+    <div class="eyebrow">Berth · Circle CCTP V2 × KeeperHub</div>
+    <h1>The window where the money exists nowhere.</h1>
+    <p class="lead claim">A CCTP burn is irreversible the moment it lands. From that block until someone calls <code>receiveMessage</code> on the destination chain, the USDC exists on neither chain — and by default <strong>any address may be the one to call it</strong>. Berth closes that window to one address.</p>
+    <div class="actions">
+      <a class="btn primary" href="proof.html">See the proof</a>
+      <a class="btn" href="mechanism.html">How it works</a>
+      <a class="btn" href="https://github.com/Cassxbt/berth">Source</a>
+    </div>
+  </section>
+
+  <section>
+    <h2>What Berth is</h2>
+    <div class="split">
+      <div class="aside">
+        <h3>In one sentence</h3>
+        <p>Berth makes a cross-chain USDC transfer that exactly one party is permitted to complete, and then completes it — including the follow-on instruction the bridge itself refuses to run.</p>
+      </div>
+      <div>
+        <p>Circle's CCTP moves USDC by burning it on one chain and minting it on another against a signed attestation. Two optional fields on the burn decide who may finish the job:</p>
+        <p><code>destinationCaller</code> names the only address permitted to call <code>receiveMessage</code> and mint. Leave it at <code>bytes32(0)</code>, as almost every integration does, and anyone may mint.</p>
+        <p><code>hookData</code> carries a follow-on instruction. Circle states plainly that it will not execute it: <em>“Hook execution is left entirely to the integrator.”</em> The instruction crosses the chain and then sits there.</p>
+        <p>Berth sets the first to a KeeperHub-custodied wallet and fills the second with a real call. The result is a transfer that only KeeperHub can settle, and an instruction that only Berth runs.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>What it is for</h2>
+    <div class="grid-2">
+      <div>
+        <h3>Delivery that cannot be raced</h3>
+        <p>An agent moving funds cross-chain normally leaves the final mint open to whoever arrives first. Naming the caller removes the race entirely — not by being faster, but by making every other caller inadmissible.</p>
+      </div>
+      <div>
+        <h3>The instruction the bridge won't run</h3>
+        <p>A hook is where “move the money” becomes “move the money and then do the thing”. Circle carries it and declines to execute. Somebody has to, and that somebody has to be the one permitted to mint.</p>
+      </div>
+      <div>
+        <h3>Execution you can audit from outside</h3>
+        <p>Every action runs through KeeperHub's sponsored path, which leaves a decodable trail. A third party can reconstruct what was executed from a transaction hash and a public RPC, with no access to us.</p>
+      </div>
+      <div>
+        <h3>A refusal anyone can reproduce</h3>
+        <p>The gate is not our claim to make. It is a <code>require</code> in Circle's deployed contract, and anyone can offer the same message from a different address and watch it be refused.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Proven, not asserted</h2>
+    <p class="kicker">Two complete transfers, five transactions, all executed through KeeperHub and all gas-sponsored. Every figure on this site is read from chain when you load the proof page.</p>
+    <dl class="facts" id="facts"></dl>
+    <div class="actions" style="margin-top:2rem">
+      <a class="btn primary" href="proof.html">Verify it yourself</a>
+    </div>
+  </section>
+
+</main>
+<footer class="wrap">
+  <p style="max-width:none">Berth · <a href="https://github.com/Cassxbt/berth">github.com/Cassxbt/berth</a> · MIT · Built for the KeeperHub Agent Economy hackathon · Testnet only</p>
+</footer>
+<script src="proof.js"></script>
+<script>
+  const p = location.pathname.split("/").pop().replace(".html","") || "index";
+  document.querySelectorAll(".nav-links a[data-p]").forEach(a => {
+    if (a.dataset.p === p) a.setAttribute("aria-current", "page");
+  });
+</script>
+</body>
+</html>

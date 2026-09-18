@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mechanism — Berth</title>
+<meta name="description" content="How KeeperHub is used, and what breaks if you remove it.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="nav"><div class="wrap nav-inner">
+  <a class="brand" href="./">Berth</a>
+  <nav class="nav-links">
+    <a href="./" data-p="index">Overview</a>
+    <a href="mechanism.html" data-p="mechanism">Mechanism</a>
+    <a href="proof.html" data-p="proof">Proof</a>
+    <a href="faq.html" data-p="faq">FAQ</a>
+    <a href="https://github.com/Cassxbt/berth">GitHub</a>
+  </nav>
+</div></div>
+
+<main class="wrap">
+
+  <section class="hero" style="padding-top:clamp(2.5rem,6vw,4.5rem)">
+    <div class="eyebrow">Mechanism</div>
+    <h1>One gate, enforced by someone else's contract.</h1>
+    <p class="lead claim">Berth contains no Solidity. The rule that makes it work was written and audited by Circle; Berth only decides what to pass into it.</p>
+  </section>
+
+  <section>
+    <h2>The sequence</h2>
+    <div class="flow mono">
+      <b>1 · burn</b> &nbsp;Base Sepolia&nbsp; → &nbsp;<code>depositForBurnWithHook</code><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;destinationCaller = the KeeperHub wallet &nbsp;·&nbsp; hookData = a real call<br><br>
+      <b>2 · attest</b> &nbsp;Circle&nbsp; → &nbsp;signs the message, rewrites only the nonce and executed finality<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;the gate and the instruction cross byte-identical, and neither is executed<br><br>
+      <b>3 · mint</b> &nbsp;Ethereum Sepolia&nbsp; → &nbsp;<code>receiveMessage</code><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;admitted for one address, refused for every other<br><br>
+      <b>4 · hook</b> &nbsp;Ethereum Sepolia&nbsp; → &nbsp;Berth executes the carried instruction
+    </div>
+    <p class="note">Steps 3 and 4 are two transactions, not one. That is a constraint rather than a choice — see below.</p>
+  </section>
+
+  <section>
+    <h2>Where KeeperHub is load-bearing</h2>
+    <div class="split">
+      <div class="aside">
+        <h3>The removal test</h3>
+        <p>The honest question for any sponsored integration is what survives if you delete the sponsor. Here is the answer, step by step.</p>
+      </div>
+      <div>
+        <div class="removal">
+          <div class="step"><b>The named caller is a KeeperHub wallet.</b> It is a Turnkey key delegated via EIP-7702, and it is what <code>destinationCaller</code> points at.<br><span class="dead">Remove KeeperHub → no address on the destination chain is permitted to mint. The burn already happened. The USDC is stranded permanently.</span></div>
+          <div class="step"><b>That wallet holds no native balance.</b> Zero on both chains, verifiably, at all times.<br><span class="dead">Remove KeeperHub's sponsorship → the only permitted caller cannot pay for a transaction, so it cannot mint even though it alone is allowed to.</span></div>
+          <div class="step"><b>The hook runs through the same wallet.</b> The instruction Circle declines to execute is executed by the party that minted.<br><span class="dead">Remove KeeperHub → the instruction is delivered and never runs.</span></div>
+        </div>
+        <p class="lead" style="margin-top:2rem"><strong>Without KeeperHub there is no address permitted to mint this USDC. The burn is irreversible; the mint is exclusive.</strong></p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Which KeeperHub surfaces are used</h2>
+    <p class="kicker">Only surfaces with a real call site are listed. Anything not used is not claimed.</p>
+    <dl class="facts">
+      <div><dt>Sponsored execution</dt><dd><code>execute(address,address,uint256,bytes)</code> at <code>0x9aefaff8</code> on the forwarder. Every one of the five transactions went through it.</dd></div>
+      <div><dt>Turnkey key + EIP-7702</dt><dd>The acting wallet is a delegated account, <code>0xef0100…</code>, identical designator on both chains.</dd></div>
+      <div><dt>Workflow executor API</dt><dd><code>PATCH /api/workflows/{id}</code> to set exact arguments, then <code>POST /api/workflows/{id}/execute</code>. This path is gas-sponsored.</dd></div>
+      <div><dt>Direct execution API</dt><dd><code>POST /api/execute/contract-call</code> with <code>simulate: true</code> as pre-flight before every broadcast.</dd></div>
+      <div><dt>Not used</dt><dd>MCP, CLI, x402, MPP, agent-authored workflows. No call site, so no claim.</dd></div>
+    </dl>
+  </section>
+
+  <section>
+    <h2>Why there is no contract</h2>
+    <div class="split">
+      <div class="aside"><h3>Two designs we cannot build</h3><p>Both are the obvious answer. Both fail, and the second fails for an instructive reason.</p></div>
+      <div>
+        <p><strong>A hook executor as <code>mintRecipient</code>.</strong> It would receive the mint and run the instruction atomically. It cannot: <code>TokenMessengerV2._handleReceiveMessage</code> mints and never calls back into the recipient, so the contract would take the funds and never execute.</p>
+        <p><strong>Batching the mint and the hook.</strong> One transaction, one signature. It cannot either, and the reason is the gate itself. KeeperHub's batch node routes through Multicall3's <code>aggregate3</code>, which forwards each call — so <code>msg.sender</code> at the transmitter becomes Multicall3 rather than the named caller, and Circle refuses it.</p>
+        <p>The proof page reproduces that live: the identical call, from the identical wallet, is refused when routed through Multicall3 and admitted when sent directly. <strong>Exclusivity and atomicity are mutually exclusive here</strong>, and exclusivity is the product.</p>
+        <p>Shipping no Solidity also keeps contributor-written code out of the value path, and leaves the guarantee resting on an audited contract rather than on a modifier we wrote.</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+<footer class="wrap">
+  <p style="max-width:none">Berth · <a href="https://github.com/Cassxbt/berth">github.com/Cassxbt/berth</a> · MIT · Built for the KeeperHub Agent Economy hackathon · Testnet only</p>
+</footer>
+<script>
+  const p = location.pathname.split("/").pop().replace(".html","") || "index";
+  document.querySelectorAll(".nav-links a[data-p]").forEach(a => {
+    if (a.dataset.p === p) a.setAttribute("aria-current", "page");
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Proof — Berth</title>
+<meta name="description" content="Every claim Berth makes, verified live in your browser against public RPCs. No wallet, no key.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="nav"><div class="wrap nav-inner">
+  <a class="brand" href="./">Berth</a>
+  <nav class="nav-links">
+    <a href="./" data-p="index">Overview</a>
+    <a href="mechanism.html" data-p="mechanism">Mechanism</a>
+    <a href="proof.html" data-p="proof">Proof</a>
+    <a href="faq.html" data-p="faq">FAQ</a>
+    <a href="https://github.com/Cassxbt/berth">GitHub</a>
+  </nav>
+</div></div>
+
+<main class="wrap">
+
+  <section class="hero" style="padding-top:clamp(2.5rem,6vw,4.5rem)">
+    <div class="eyebrow">Proof</div>
+    <h1>Check it yourself. We are not a source you have to trust.</h1>
+    <p class="lead claim">Nothing on this page is precomputed. Every figure is read from public RPCs and Circle's public API, in your browser, when you press the button. No wallet, no key, no account, no request to us.</p>
+    <div class="actions">
+      <button class="btn primary" id="run">Verify every claim live</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Reproduce the refusal</h2>
+    <p>The same attested message, offered to Circle's contract from two different addresses. The only thing that differs is who is asking.</p>
+    <div class="actions" style="margin-bottom:1.75rem">
+      <button class="btn" id="probe">Run both calls</button>
+    </div>
+    <div class="probe">
+      <div>
+        <div class="who">from <span class="mono">0x…dEaD</span> — an address with no claim to it</div>
+        <div class="out mono" id="out-outsider"><span class="state pending">not yet run</span></div>
+      </div>
+      <div>
+        <div class="who">from <span class="mono">0x3db6…0cb2</span> — the named destinationCaller</div>
+        <div class="out mono" id="out-permitted"><span class="state pending">not yet run</span></div>
+      </div>
+    </div>
+    <p class="note" style="margin-top:1.25rem">The permitted caller now reverts <code>Nonce already used</code> because the transfer already settled. Before it did, that same call returned <code>true</code>. The caller check sits above the nonce check, so the gate keeps refusing everyone else permanently — settling did not erase the proof.</p>
+  </section>
+
+  <section>
+    <h2>Live assertions</h2>
+    <p class="kicker">These are the checks <code>npm run verify</code> runs in CI, executed here against live chain state. The repository runs twenty-four; these twelve are the ones worth watching happen.</p>
+    <table class="assertions"><tbody id="rows"></tbody></table>
+    <div class="tally mono" id="tally">idle</div>
+    <p class="note" style="margin-top:1.5rem">If a row fails, this page is wrong and says so. The repository's tamper test mutates the claims seven ways and requires the verifier to fail on every one — a verifier never shown to fail is not evidence.</p>
+  </section>
+
+  <section>
+    <h2>The transactions</h2>
+    <dl class="facts" id="facts"></dl>
+  </section>
+
+  <section>
+    <h2>What is not true yet</h2>
+    <div class="split">
+      <div class="aside"><h3>Stated before you ask</h3><p>The limits of the claim, in the same place as the claim.</p></div>
+      <div>
+        <p><strong>Testnet only.</strong> The value is testnet value. The contracts, addresses and enforcement are the production CCTP V2 deployments.</p>
+        <p><strong>Gas was always sponsored.</strong> The wallet has never paid for its own gas, so the self-funded path is untested.</p>
+        <p><strong>Exclusivity is about callers, not custody.</strong> No address other than the named one can call <code>receiveMessage</code> for these messages, and Circle's contract enforces that. It is not a claim that the underlying Turnkey key is unreachable. We looked for a way to prove key non-exportability from outside and did not find one.</p>
+        <p><strong>Hook delivery is two transactions.</strong> Atomic delivery is unavailable. If a mint lands and the hook then fails, nothing retries it.</p>
+        <p><strong>Two transfers is not a corpus.</strong> The refusal path is reproducible without limit; the execution path is n=2. Nothing is claimed about throughput.</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+<footer class="wrap">
+  <p style="max-width:none">Berth · <a href="https://github.com/Cassxbt/berth">github.com/Cassxbt/berth</a> · MIT · Built for the KeeperHub Agent Economy hackathon · Testnet only</p>
+</footer>
+<script src="proof.js"></script>
+<script>
+  const p = location.pathname.split("/").pop().replace(".html","") || "index";
+  document.querySelectorAll(".nav-links a[data-p]").forEach(a => {
+    if (a.dataset.p === p) a.setAttribute("aria-current", "page");
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FAQ — Berth</title>
+<meta name="description" content="Direct answers about what Berth is, what enforces it, and where it stops.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="nav"><div class="wrap nav-inner">
+  <a class="brand" href="./">Berth</a>
+  <nav class="nav-links">
+    <a href="./" data-p="index">Overview</a>
+    <a href="mechanism.html" data-p="mechanism">Mechanism</a>
+    <a href="proof.html" data-p="proof">Proof</a>
+    <a href="faq.html" data-p="faq">FAQ</a>
+    <a href="https://github.com/Cassxbt/berth">GitHub</a>
+  </nav>
+</div></div>
+
+<main class="wrap">
+
+  <section class="hero" style="padding-top:clamp(2.5rem,6vw,4.5rem)">
+    <div class="eyebrow">FAQ</div>
+    <h1>The questions a reviewer asks.</h1>
+    <p class="lead claim">Including the ones that are least comfortable to answer.</p>
+  </section>
+
+  <section>
+    <h2>The mechanism</h2>
+
+    <details><summary>Isn't this just a bridge transfer?</summary><div class="body">
+      <p>A bridge transfer ends when the money arrives, and by default anyone may be the one to land it. Berth changes who is permitted to complete it and then executes the instruction the bridge deliberately does not run. The transfer is the substrate, not the product.</p>
+    </div></details>
+
+    <details><summary>What actually stops someone else from minting?</summary><div class="body">
+      <p>A line in Circle's deployed <code>MessageTransmitterV2</code>: <code>require(destinationCaller == msg.sender, "Invalid caller for message")</code>. Berth did not write it, cannot change it, and does not need to be trusted about it. The <a href="proof.html">proof page</a> offers the same message from unrelated addresses and shows the refusal.</p>
+    </div></details>
+
+    <details><summary>Why does <code>hookData</code> need anyone to execute it?</summary><div class="body">
+      <p>Because Circle says so. Their documentation reads: <em>“CCTP does not implement hook execution in the core protocol. Instead, hooks are treated as opaque metadata.”</em> And in code, <code>TokenMessengerV2._handleReceiveMessage</code> reads the recipient, the token, the amount and the fee, and never reads <code>hookData</code> at all. The instruction crosses and waits for someone.</p>
+    </div></details>
+
+    <details><summary>Why is the mint separate from the hook?</summary><div class="body">
+      <p>Because they cannot be combined. Batching routes through Multicall3's <code>aggregate3</code>, which forwards each call, so <code>msg.sender</code> becomes Multicall3 and the gate refuses it. We expected to ship atomic delivery and found it unavailable; the proof page reproduces the refusal live. Exclusivity and atomicity are mutually exclusive here.</p>
+    </div></details>
+
+    <h2 style="margin-top:3.5rem">KeeperHub</h2>
+
+    <details><summary>What breaks if you remove KeeperHub?</summary><div class="body">
+      <p>The named caller is a KeeperHub wallet, so with KeeperHub gone no address is permitted to mint and the burned USDC is stranded permanently. That wallet also holds zero native balance on both chains, so without sponsorship the only permitted caller cannot pay for a transaction either. Then the hook never runs. See the <a href="mechanism.html">removal test</a>.</p>
+    </div></details>
+
+    <details><summary>Couldn't a script with a funded key do the same thing?</summary><div class="body">
+      <p>A script could burn and mint. It could not be this wallet, and this wallet is what the message names. The gate does not care how capable the caller is; it compares an address. Whoever holds the named address is the only party CCTP will admit, and here that address is custodied and sponsored by KeeperHub.</p>
+    </div></details>
+
+    <details><summary>Which KeeperHub features are actually used?</summary><div class="body">
+      <p>Sponsored execution through the forwarder, the Turnkey key with its EIP-7702 delegation, the workflow executor API, and the direct execution API's <code>simulate</code> as pre-flight. MCP, CLI, x402 and MPP are not used and therefore not claimed.</p>
+    </div></details>
+
+    <h2 style="margin-top:3.5rem">Trust and limits</h2>
+
+    <details><summary>Could whoever holds the private key mint without KeeperHub?</summary><div class="body">
+      <p>Yes, if the key were exportable. The claim is precise: <strong>the permitted caller set has size one</strong>, enforced on-chain. It is not a claim about key custody. We looked for a way to prove non-exportability from outside and did not find one, so we do not assert it.</p>
+    </div></details>
+
+    <details><summary>This is testnet. Does it mean anything?</summary><div class="body">
+      <p>The contracts, addresses and enforcement are the production CCTP V2 deployments; the value is testnet value. A testnet can show the mechanism holds. Only a mainnet burn would put something at stake, and we say so rather than implying otherwise.</p>
+    </div></details>
+
+    <details><summary>Why should I believe the numbers on this site?</summary><div class="body">
+      <p>Don't. Press the button on the <a href="proof.html">proof page</a> and your browser reads them from public RPCs. Or clone the repository and run <code>npm run verify</code>, which needs no credentials. Then run <code>npm run verify:tamper</code>, which mutates the claims seven ways and requires the verifier to fail on each.</p>
+    </div></details>
+
+    <details><summary>What went wrong while building this?</summary><div class="body">
+      <p>Two designs we expected to ship turned out to be impossible, and both are documented rather than quietly dropped. We also found that <code>simulate</code> reports <code>wouldRevert: false</code> for a send the wallet cannot pay gas for, and filed it upstream as <a href="https://github.com/KeeperHub/keeperhub/issues/2564">KeeperHub#2564</a>.</p>
+    </div></details>
+
+  </section>
+
+</main>
+<footer class="wrap">
+  <p style="max-width:none">Berth · <a href="https://github.com/Cassxbt/berth">github.com/Cassxbt/berth</a> · MIT · Built for the KeeperHub Agent Economy hackathon · Testnet only</p>
+</footer>
+<script>
+  const p = location.pathname.split("/").pop().replace(".html","") || "index";
+  document.querySelectorAll(".nav-links a[data-p]").forEach(a => {
+    if (a.dataset.p === p) a.setAttribute("aria-current", "page");
+  });
+</script>
+</body>
+</html>
