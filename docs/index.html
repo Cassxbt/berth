@@ -28,7 +28,14 @@
   <section class="r hero">
     <div class="eyebrow">Berth · Circle CCTP V2 × KeeperHub</div>
     <h1>The window where the money exists nowhere.</h1>
-    <p class="lead claim">A CCTP burn is irreversible the moment it lands. From that block until someone calls <code>receiveMessage</code> on the destination chain, the USDC exists on neither chain — and by default <strong>any address may be the one to call it</strong>. Berth closes that window to one address.</p>
+    <p class="lead claim">A CCTP burn is irreversible the moment it lands. From that block until someone calls <code class="fn">receiveMessage</code> on the destination chain, the USDC exists on neither chain — and by default <strong>any address may be the one to call it</strong>. Berth closes that window to one address.</p>
+
+    <div class="gateviz r" data-d="120" style="margin-top:2rem;max-width:44rem">
+      <div class="row no"><i class="bar"></i><span class="who">0x000000…dEaD</span><span class="verdict t-red">Invalid caller for message</span></div>
+      <div class="row no"><i class="bar"></i><span class="who">0xd8dA6BF2…6045</span><span class="verdict t-red">Invalid caller for message</span></div>
+      <div class="row no"><i class="bar"></i><span class="who">every other address on earth</span><span class="verdict t-red">Invalid caller for message</span></div>
+      <div class="row yes"><i class="bar"></i><span class="who">0x3db6f359…0cb2 <span class="t-dim">the KeeperHub wallet</span></span><span class="verdict t-green">admitted</span></div>
+    </div>
     <div class="actions">
       <a class="btn primary" href="proof.html">See the proof</a>
       <a class="btn" href="mechanism.html">How it works</a>
@@ -45,8 +52,8 @@
       </div>
       <div>
         <p>Circle's CCTP moves USDC by burning it on one chain and minting it on another against a signed attestation. Two optional fields on the burn decide who may finish the job:</p>
-        <p><code>destinationCaller</code> names the only address permitted to call <code>receiveMessage</code> and mint. Leave it at <code>bytes32(0)</code>, as almost every integration does, and anyone may mint.</p>
-        <p><code>hookData</code> carries a follow-on instruction. Circle states plainly that it will not execute it: <em>“Hook execution is left entirely to the integrator.”</em> The instruction crosses the chain and then sits there.</p>
+        <p><code class="fn">destinationCaller</code> names the only address permitted to call <code class="fn">receiveMessage</code> and mint. Leave it at <code class="warn">bytes32(0)</code>, as almost every integration does, and anyone may mint.</p>
+        <p><code class="fn">hookData</code> carries a follow-on instruction. Circle states plainly that it will not execute it: <em>“Hook execution is left entirely to the integrator.”</em> The instruction crosses the chain and then sits there.</p>
         <p>Berth sets the first to a KeeperHub-custodied wallet and fills the second with a real call. The result is a transfer that only KeeperHub can settle, and an instruction that only Berth runs.</p>
       </div>
     </div>
@@ -69,7 +76,7 @@
       </div>
       <div>
         <h3>A refusal anyone can reproduce</h3>
-        <p>The gate is not our claim to make. It is a <code>require</code> in Circle's deployed contract, and anyone can offer the same message from a different address and watch it be refused.</p>
+        <p>The gate is not our claim to make. It is a <code class="err">require</code> in Circle's deployed contract, and anyone can offer the same message from a different address and watch it be refused.</p>
       </div>
     </div>
   </section>
@@ -77,6 +84,12 @@
   <section class="r">
     <h2>Proven, not asserted</h2>
     <p class="kicker">Two complete transfers, five transactions, all executed through KeeperHub and all gas-sponsored. Every figure on this site is read from chain when you load the proof page.</p>
+    <div class="stats r">
+      <div class="stat"><div class="n" data-count="1.5" data-dp="1">0<span class="unit">USDC</span></div><div class="k">moved through the gate</div></div>
+      <div class="stat"><div class="n" data-count="5">0</div><div class="k">transactions, all sponsored</div></div>
+      <div class="stat"><div class="n" data-count="24">0</div><div class="k">live assertions</div></div>
+      <div class="stat"><div class="n t-green" data-count="0">0</div><div class="k">mints by anyone else</div></div>
+    </div>
     <dl class="facts" id="facts"></dl>
     <div class="actions" style="margin-top:2rem">
       <a class="btn primary" href="proof.html">Verify it yourself</a>

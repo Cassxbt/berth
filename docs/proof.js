@@ -304,11 +304,15 @@ async function runProbe() {
     await new Promise((r) => setTimeout(r, 260));
     try {
       const res = await rpc(RPC.eth, "eth_call", [{ from, to: A.transmitter, data }, "latest"]);
-      el.innerHTML = `<span class="state pass">returned ${BigInt(res) === 1n ? "true" : res}</span>`;
+      el.innerHTML = `<span class="state pass">returned</span> <span class="t-green">${BigInt(res) === 1n ? "true" : res}</span>`;
     } catch (err) {
       const reason = revertStringOf(err) || err.message;
-      const cls = who === "outsider" ? "fail" : "pending";
-      el.innerHTML = `<span class="state ${cls}">reverted</span> ${reason}`;
+      // A refusal of the caller is red; a spent nonce is amber. They mean
+      // different things and should not look the same.
+      const isGate = reason === "Invalid caller for message";
+      const cls = isGate ? "fail" : "spent";
+      const tone = isGate ? "t-red" : "t-yellow";
+      el.innerHTML = `<span class="state ${cls}">reverted</span> <span class="${tone}">${reason}</span>`;
     }
     el.parentElement.classList.remove("hit");
   }

@@ -33,15 +33,38 @@
 
   <section class="r">
     <h2>The sequence</h2>
-    <div class="flow mono">
-      <b>1 · burn</b> &nbsp;Base Sepolia&nbsp; → &nbsp;<code>depositForBurnWithHook</code><br>
-      &nbsp;&nbsp;&nbsp;&nbsp;destinationCaller = the KeeperHub wallet &nbsp;·&nbsp; hookData = a real call<br><br>
-      <b>2 · attest</b> &nbsp;Circle&nbsp; → &nbsp;signs the message, rewrites only the nonce and executed finality<br>
-      &nbsp;&nbsp;&nbsp;&nbsp;the gate and the instruction cross byte-identical, and neither is executed<br><br>
-      <b>3 · mint</b> &nbsp;Ethereum Sepolia&nbsp; → &nbsp;<code>receiveMessage</code><br>
-      &nbsp;&nbsp;&nbsp;&nbsp;admitted for one address, refused for every other<br><br>
-      <b>4 · hook</b> &nbsp;Ethereum Sepolia&nbsp; → &nbsp;Berth executes the carried instruction
-    </div>
+    <svg class="diagram" viewBox="0 0 880 250" role="img" aria-label="Burn on Base Sepolia, Circle attests, the gate admits only the KeeperHub wallet, then the hook runs">
+  <rect x="8" y="86" width="150" height="54" rx="7" class="box"/>
+  <text x="24" y="108" class="lbl">burn</text>
+  <text x="24" y="124" class="lbl-s">Base Sepolia</text>
+
+  <path d="M158 113 H236" class="wire"/>
+  <circle cx="200" cy="113" r="2.4" class="flow-dot"><animate attributeName="cx" values="162;232" dur="2.6s" repeatCount="indefinite"/></circle>
+
+  <rect x="236" y="86" width="158" height="54" rx="7" class="box"/>
+  <text x="252" y="108" class="lbl">Circle attests</text>
+  <text x="252" y="124" class="lbl-s">carries the hook, runs none</text>
+
+  <path d="M394 113 H470" class="wire"/>
+  <circle cx="430" cy="113" r="2.4" class="flow-dot"><animate attributeName="cx" values="398;466" dur="2.6s" begin="0.5s" repeatCount="indefinite"/></circle>
+
+  <rect x="470" y="74" width="126" height="78" rx="7" class="gate"/>
+  <text x="486" y="100" class="lbl" style="fill:var(--accent)">the gate</text>
+  <text x="486" y="116" class="lbl-s">destinationCaller</text>
+  <text x="486" y="130" class="lbl-s">== msg.sender</text>
+
+  <path d="M596 96 C 640 96, 648 52, 700 52" class="wire-ok"/>
+  <text x="712" y="48" class="lbl" style="fill:var(--t-green)">mint</text>
+  <text x="712" y="63" class="lbl-s">the KeeperHub wallet</text>
+
+  <path d="M596 130 C 640 130, 648 182, 700 182" class="wire-no"/>
+  <text x="712" y="178" class="lbl" style="fill:var(--t-red)">refused</text>
+  <text x="712" y="193" class="lbl-s">every other address</text>
+
+  <path d="M742 68 V 108 H 700" class="wire-ok" opacity=".55"/>
+  <text x="612" y="120" class="lbl-s" style="fill:var(--t-green)">then the hook runs</text>
+</svg>
+
     <p class="note">Steps 3 and 4 are two transactions, not one. That is a constraint rather than a choice — see below.</p>
   </section>
 
@@ -54,7 +77,7 @@
       </div>
       <div>
         <div class="removal">
-          <div class="step"><b>The named caller is a KeeperHub wallet.</b> It is a Turnkey key delegated via EIP-7702, and it is what <code>destinationCaller</code> points at.<br><span class="dead">Remove KeeperHub → no address on the destination chain is permitted to mint. The burn already happened. The USDC is stranded permanently.</span></div>
+          <div class="step"><b>The named caller is a KeeperHub wallet.</b> It is a Turnkey key delegated via EIP-7702, and it is what <code class="fn">destinationCaller</code> points at.<br><span class="dead">Remove KeeperHub → no address on the destination chain is permitted to mint. The burn already happened. The USDC is stranded permanently.</span></div>
           <div class="step"><b>That wallet holds no native balance.</b> Zero on both chains, verifiably, at all times.<br><span class="dead">Remove KeeperHub's sponsorship → the only permitted caller cannot pay for a transaction, so it cannot mint even though it alone is allowed to.</span></div>
           <div class="step"><b>The hook runs through the same wallet.</b> The instruction Circle declines to execute is executed by the party that minted.<br><span class="dead">Remove KeeperHub → the instruction is delivered and never runs.</span></div>
         </div>
@@ -67,8 +90,8 @@
     <h2>Which KeeperHub surfaces are used</h2>
     <p class="kicker">Only surfaces with a real call site are listed. Anything not used is not claimed.</p>
     <dl class="facts">
-      <div><dt>Sponsored execution</dt><dd><code>execute(address,address,uint256,bytes)</code> at <code>0x9aefaff8</code> on the forwarder. Every one of the five transactions went through it.</dd></div>
-      <div><dt>Turnkey key + EIP-7702</dt><dd>The acting wallet is a delegated account, <code>0xef0100…</code>, identical designator on both chains.</dd></div>
+      <div><dt>Sponsored execution</dt><dd><code>execute(address,address,uint256,bytes)</code> at <code class="addr">0x9aefaff8</code> on the forwarder. Every one of the five transactions went through it.</dd></div>
+      <div><dt>Turnkey key + EIP-7702</dt><dd>The acting wallet is a delegated account, <code class="addr">0xef0100…</code>, identical designator on both chains.</dd></div>
       <div><dt>Workflow executor API</dt><dd><code>PATCH /api/workflows/{id}</code> to set exact arguments, then <code>POST /api/workflows/{id}/execute</code>. This path is gas-sponsored.</dd></div>
       <div><dt>Direct execution API</dt><dd><code>POST /api/execute/contract-call</code> with <code>simulate: true</code> as pre-flight before every broadcast.</dd></div>
       <div><dt>Not used</dt><dd>MCP, CLI, x402, MPP, agent-authored workflows. No call site, so no claim.</dd></div>
@@ -81,7 +104,7 @@
       <div class="aside"><h3>Two designs we cannot build</h3><p>Both are the obvious answer. Both fail, and the second fails for an instructive reason.</p></div>
       <div>
         <p><strong>A hook executor as <code>mintRecipient</code>.</strong> It would receive the mint and run the instruction atomically. It cannot: <code>TokenMessengerV2._handleReceiveMessage</code> mints and never calls back into the recipient, so the contract would take the funds and never execute.</p>
-        <p><strong>Batching the mint and the hook.</strong> One transaction, one signature. It cannot either, and the reason is the gate itself. KeeperHub's batch node routes through Multicall3's <code>aggregate3</code>, which forwards each call — so <code>msg.sender</code> at the transmitter becomes Multicall3 rather than the named caller, and Circle refuses it.</p>
+        <p><strong>Batching the mint and the hook.</strong> One transaction, one signature. It cannot either, and the reason is the gate itself. KeeperHub's batch node routes through Multicall3's <code class="fn">aggregate3</code>, which forwards each call — so <code class="warn">msg.sender</code> at the transmitter becomes Multicall3 rather than the named caller, and Circle refuses it.</p>
         <p>The proof page reproduces that live: the identical call, from the identical wallet, is refused when routed through Multicall3 and admitted when sent directly. <strong>Exclusivity and atomicity are mutually exclusive here</strong>, and exclusivity is the product.</p>
         <p>Shipping no Solidity also keeps contributor-written code out of the value path, and leaves the guarantee resting on an audited contract rather than on a modifier we wrote.</p>
       </div>

@@ -7,6 +7,9 @@
 ![assertions](https://img.shields.io/badge/live%20assertions-24-informational)
 ![network](https://img.shields.io/badge/Base%20Sepolia%20%E2%86%92%20Ethereum%20Sepolia-CCTP%20V2-informational)
 ![license](https://img.shields.io/badge/license-MIT-informational)
+[![live](https://img.shields.io/badge/live-berth--phi.vercel.app-3ecf8e)](https://berth-phi.vercel.app)
+
+**Live: [berth-phi.vercel.app](https://berth-phi.vercel.app)** — verify every claim in your browser, no wallet required.
 
 [Judge it in 90 seconds](#judge-it-in-90-seconds) · [npm run verify](#npm-run-verify) · [Honesty](#honesty) · [What still breaks](#what-still-breaks)
 

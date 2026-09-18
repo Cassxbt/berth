@@ -52,7 +52,7 @@
         <div class="out mono" id="out-permitted"><span class="state pending">not yet run</span></div>
       </div>
     </div>
-    <p class="note" style="margin-top:1.25rem">The permitted caller now reverts <code>Nonce already used</code> because the transfer already settled. Before it did, that same call returned <code>true</code>. The caller check sits above the nonce check, so the gate keeps refusing everyone else permanently — settling did not erase the proof.</p>
+    <p class="note" style="margin-top:1.25rem">The permitted caller now reverts <code class="warn">Nonce already used</code> because the transfer already settled. Before it did, that same call returned <code class="val">true</code>. The caller check sits above the nonce check, so the gate keeps refusing everyone else permanently — settling did not erase the proof.</p>
   </section>
 
   <section class="r">
