@@ -37,3 +37,54 @@
 
 .codeblk { font-family: "Geist Mono", monospace; font-size: clamp(0.8rem,1.5vw,1.05rem); background: var(--bg-raised); border: 1px solid var(--line); border-radius: 8px; padding: 1rem 1.15rem; overflow-x: auto; color: var(--fg-dim); line-height: 1.8; }
 .hint { position: fixed; bottom: 3.2rem; right: clamp(1.25rem,4vw,3rem); font: 400 0.72rem "Geist Mono", monospace; color: var(--fg-faint); z-index: 5; opacity: .8; }
+
+/* ── per-element entrance, staggered ──────────────────── */
+.slide .inner > * {
+  opacity: 0; transform: translateY(16px);
+  transition: opacity 560ms cubic-bezier(.22,.61,.36,1), transform 560ms cubic-bezier(.22,.61,.36,1);
+}
+.slide.on .inner > * { opacity: 1; transform: none; }
+.slide.on .inner > *:nth-child(1) { transition-delay: 60ms; }
+.slide.on .inner > *:nth-child(2) { transition-delay: 190ms; }
+.slide.on .inner > *:nth-child(3) { transition-delay: 320ms; }
+.slide.on .inner > *:nth-child(4) { transition-delay: 450ms; }
+.slide.on .inner > *:nth-child(5) { transition-delay: 580ms; }
+.slide.on .inner > *:nth-child(6) { transition-delay: 700ms; }
+
+/* rows and stats land one at a time, like output arriving */
+.rowset .row, .bigstat > div {
+  opacity: 0; transform: translateX(-10px);
+  transition: opacity 460ms cubic-bezier(.22,.61,.36,1), transform 460ms cubic-bezier(.22,.61,.36,1);
+}
+.slide.on .rowset .row, .slide.on .bigstat > div { opacity: 1; transform: none; }
+.slide.on .rowset .row:nth-child(1) { transition-delay: 520ms; }
+.slide.on .rowset .row:nth-child(2) { transition-delay: 700ms; }
+.slide.on .rowset .row:nth-child(3) { transition-delay: 880ms; }
+.slide.on .rowset .row:nth-child(4) { transition-delay: 1120ms; }
+.slide.on .bigstat > div:nth-child(1) { transition-delay: 560ms; }
+.slide.on .bigstat > div:nth-child(2) { transition-delay: 700ms; }
+.slide.on .bigstat > div:nth-child(3) { transition-delay: 840ms; }
+
+/* the admitted row gets a beat of emphasis after it lands */
+.slide.on .rowset .row.yes { animation: admit 900ms ease-out 1320ms 1 both; }
+@keyframes admit {
+  0%   { box-shadow: inset 0 0 0 1px rgba(70,211,154,0); }
+  35%  { box-shadow: inset 0 0 0 1px rgba(70,211,154,0.55); }
+  100% { box-shadow: inset 0 0 0 1px rgba(70,211,154,0.18); }
+}
+
+/* code blocks type in as a block rather than crawling */
+.codeblk { opacity: 0; transition: opacity 520ms ease-out; }
+.slide.on .codeblk { opacity: 1; transition-delay: 420ms; }
+
+/* ── autoplay chrome ─────────────────────────────────── */
+.deck-nav .play { border-color: var(--accent); color: var(--accent); }
+.deck-nav .play.on { background: var(--accent); color: #08080a; }
+.slide-timer { position: absolute; inset: auto 0 0 0; height: 2px; background: transparent; }
+.slide-timer i { display: block; height: 100%; width: 0; background: var(--fg-faint); }
+body.presenting .deck-home, body.presenting .deck-nav, body.presenting .hint { opacity: 0; transition: opacity 400ms ease-out; pointer-events: none; }
+body.presenting:hover .deck-nav { opacity: 1; pointer-events: auto; }
+@media (prefers-reduced-motion: reduce) {
+  .slide .inner > *, .rowset .row, .bigstat > div, .codeblk { opacity: 1 !important; transform: none !important; transition: none !important; }
+  .slide.on .rowset .row.yes { animation: none; }
+}
