@@ -1,0 +1,39 @@
+.deck { position: fixed; inset: 0; overflow: hidden; background: var(--bg); }
+.slide {
+  position: absolute; inset: 0; display: grid; align-content: center;
+  padding: clamp(2rem, 7vw, 6rem); opacity: 0; pointer-events: none;
+  transform: translateY(18px); transition: opacity 420ms cubic-bezier(.22,.61,.36,1), transform 420ms cubic-bezier(.22,.61,.36,1);
+}
+.slide.on { opacity: 1; pointer-events: auto; transform: none; }
+.slide .inner { max-width: 1080px; margin: 0 auto; width: 100%; }
+
+.slide .kick { font: 500 0.72rem/1 "Geist Mono", monospace; letter-spacing: 0.2em; text-transform: uppercase; color: var(--fg-faint); margin-bottom: 1.5rem; }
+.slide h2.big { font-size: clamp(2rem, 5.6vw, 4.2rem); font-weight: 600; letter-spacing: -0.045em; line-height: 1.02; margin: 0 0 1.5rem; max-width: 20ch; }
+.slide p.say { font-size: clamp(1rem, 1.9vw, 1.35rem); color: var(--fg-dim); max-width: 58ch; line-height: 1.5; margin: 0 0 1rem; }
+.slide p.say strong { color: var(--fg); font-weight: 500; }
+.slide .mono-xl { font-family: "Geist Mono", monospace; font-size: clamp(0.95rem, 2vw, 1.4rem); }
+
+.deck-nav { position: fixed; bottom: 0; left: 0; right: 0; display: flex; align-items: center; gap: 1rem; padding: 1rem clamp(1.25rem,4vw,3rem); z-index: 5; }
+.deck-nav .bar { flex: 1; height: 2px; background: var(--line); border-radius: 2px; overflow: hidden; }
+.deck-nav .bar i { display: block; height: 100%; background: var(--accent); width: 0; transition: width 380ms cubic-bezier(.22,.61,.36,1); }
+.deck-nav .num { font: 400 0.78rem "Geist Mono", monospace; color: var(--fg-faint); flex: none; }
+.deck-nav button { font: inherit; font-size: 0.8rem; background: transparent; border: 1px solid var(--line-strong); color: var(--fg-dim); border-radius: 5px; padding: 0.3rem 0.6rem; cursor: pointer; }
+.deck-nav button:hover { color: var(--fg); border-color: var(--fg-faint); }
+.deck-home { position: fixed; top: 1rem; left: clamp(1.25rem,4vw,3rem); z-index: 5; display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 600; border: 0; color: var(--fg); }
+.deck-home:hover { border: 0; }
+
+.rowset { display: grid; gap: 0.5rem; font-family: "Geist Mono", monospace; font-size: clamp(0.82rem,1.5vw,1rem); }
+.rowset .row { display: flex; align-items: center; gap: 1rem; padding: 0.6rem 0.9rem; border: 1px solid var(--line); border-radius: 7px; background: var(--bg-raised); }
+.rowset .row .bar2 { width: 3px; align-self: stretch; border-radius: 2px; background: var(--fg-faint); flex: none; }
+.rowset .row.no .bar2 { background: var(--t-red); }
+.rowset .row.yes .bar2 { background: var(--t-green); }
+.rowset .row .l { flex: 1; color: var(--fg-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.bigstat { display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
+@media (min-width: 720px) { .bigstat { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); } }
+.bigstat > div { background: var(--bg-raised); padding: 1.1rem 1.2rem; }
+.bigstat .n { font-family: "Geist Mono", monospace; font-size: clamp(1.4rem,3.2vw,2.3rem); font-weight: 500; letter-spacing: -0.03em; }
+.bigstat .k { font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-faint); margin-top: 0.35rem; }
+
+.codeblk { font-family: "Geist Mono", monospace; font-size: clamp(0.8rem,1.5vw,1.05rem); background: var(--bg-raised); border: 1px solid var(--line); border-radius: 8px; padding: 1rem 1.15rem; overflow-x: auto; color: var(--fg-dim); line-height: 1.8; }
+.hint { position: fixed; bottom: 3.2rem; right: clamp(1.25rem,4vw,3rem); font: 400 0.72rem "Geist Mono", monospace; color: var(--fg-faint); z-index: 5; opacity: .8; }

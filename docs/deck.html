@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Berth — the deck</title>
+<meta name="description" content="Berth in twelve slides: the window where the money exists nowhere, and the one address permitted to close it.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="deck.css">
+</head>
+<body>
+
+<a class="deck-home" href="./"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 3H4.5A1.5 1.5 0 0 0 3 4.5v15A1.5 1.5 0 0 0 4.5 21H15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><rect x="8" y="9" width="6" height="6" rx="1" fill="#46d39a"/></svg><span>Berth</span></a>
+
+<div class="deck" id="deck">
+
+  <section class="slide">
+    <div class="inner">
+      <div class="kick">Circle CCTP V2 × KeeperHub</div>
+      <h2 class="big">Exclusive cross-chain delivery.</h2>
+      <p class="say">A burn only one address on earth is permitted to complete — and that address is a KeeperHub wallet.</p>
+      <p class="say mono-xl t-dim" style="margin-top:2rem">berth-phi.vercel.app</p>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="inner">
+      <div class="kick">The problem</div>
+      <h2 class="big">The window where the money exists nowhere.</h2>
+      <p class="say">A CCTP burn is irreversible the moment it lands. From that block until someone calls <span class="t-cyan">receiveMessage</span> on the destination chain, the USDC exists on neither chain.</p>
+      <p class="say"><strong>And by default, any address may be the one to call it.</strong></p>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="inner">
+      <div class="kick">The default nobody changes</div>
+      <h2 class="big">destinationCaller is optional.</h2>
+      <div class="codeblk">
+        <span class="t-dim">// almost every CCTP integration ships this</span><br>
+        destinationCaller: <span class="t-yellow">bytes32(0)</span><br><br>
+        <span class="t-dim">// which Circle documents as</span><br>
+        <span class="t-dim">"or bytes32(0) if message can be received by <span class="t-red">any address</span>"</span>
+      </div>
+      <p class="say" style="margin-top:1.5rem">The value is committed. Whoever shows up first finishes the job.</p>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="inner">
+      <div class="kick">One mechanism</div>
+      <h2 class="big">Berth names the caller.</h2>
+      <div class="codeblk">
+        depositForBurnWithHook(<br>
+        &nbsp;&nbsp;amount,&nbsp;<span class="t-dim">…</span><br>
+        &nbsp;&nbsp;destinationCaller: <span class="t-green">0x3db6f359…0cb2</span> <span class="t-dim">// the KeeperHub wallet</span><br>
+        &nbsp;&nbsp;hookData: <span class="t-cyan">transfer(0x…dEaD, 500000)</span> <span class="t-dim">// Circle will not run this</span><br>
+        )
+      </div>
+      <p class="say" style="margin-top:1.5rem">Circle states it plainly: <em>“Hook execution is left entirely to the integrator.”</em> In code, <span class="t-cyan">_handleReceiveMessage</span> never reads <span class="t-cyan">hookData</span> at all.</p>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="inner">
+      <div class="kick">Who enforces it</div>
+      <h2 class="big">We wrote no Solidity.</h2>
+      <div class="codeblk">
+        <span class="t-dim">// MessageTransmitterV2, deployed and audited by Circle</span><br>
+        require(<br>
+        &nbsp;&nbsp;destinationCaller == <span class="t-yellow">msg.sender</span>,<br>
+        &nbsp;&nbsp;<span class="t-red">"Invalid caller for message"</span><br>
+        );
+      </div>
+      <p class="say" style="margin-top:1.5rem">We supply the argument. <strong>Circle supplies the refusal.</strong> There is no contract of ours anywhere in the value path.</p>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="inner">
+      <div class="kick">The gate, live</div>
+      <h2 class="big">Same message. Different caller.</h2>
+      <div class="rowset">
+        <div class="row no"><i class="bar2"></i><span class="l">from 0x000000…dEaD</span><span class="t-red">Invalid caller for message</span></div>
+        <div class="row no"><i class="bar2"></i><span class="l">from 0xd8dA6BF2…6045</span><span class="t-red">Invalid caller for message</span></div>
+        <div class="row no"><i class="bar2"></i><span class="l">from every other address on earth</span><span class="t-red">Invalid caller for message</span></div>
+        <div class="row yes"><i class="bar2"></i><span class="l">from 0x3db6f359…0cb2 — the KeeperHub wallet</span><span class="t-green">admitted</span></div>
+      </div>
+      <p class="say" style="margin-top:1.5rem">Reproducible by anyone with a public RPC. No wallet, no key, no gas.</p>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="inner">
+      <div class="kick">Why KeeperHub is load-bearing</div>
+      <h2 class="big">Two locks, not one.</h2>
+      <p class="say"><strong>One.</strong> The only address permitted to mint is a KeeperHub-custodied wallet. Remove KeeperHub and the burn is irreversible with nobody able to complete it.</p>
+      <p class="say"><strong>Two.</strong> That wallet holds <span class="t-green">0 native ETH on both chains</span>. It is the only address allowed to mint and it cannot pay for a transaction without KeeperHub's sponsorship.</p>
+      <p class="say mono-xl" style="margin-top:1.75rem"><span class="t-dim">Without KeeperHub there is no address permitted to mint this USDC.</span></p>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="inner">
+      <div class="kick">What actually ran</div>
+      <h2 class="big">Five transactions. All sponsored.</h2>
+      <div class="codeblk">
+        <span class="t-green">burn</span>&nbsp;&nbsp;Base Sepolia&nbsp;&nbsp;<span class="t-dim">0xd1a6fe7e…026414</span><br>
+        &nbsp;&nbsp;↳ <span class="t-green">mint</span>&nbsp;&nbsp;Eth Sepolia&nbsp;&nbsp;<span class="t-dim">0xf69a9b4f…a6690a</span><br><br>
+        <span class="t-green">burn</span>&nbsp;&nbsp;with instruction&nbsp;&nbsp;<span class="t-dim">0xedb9bce1…7b8594</span><br>
+        &nbsp;&nbsp;↳ <span class="t-green">mint</span>&nbsp;&nbsp;<span class="t-dim">0x7c3d7cc6…0dd2db</span><br>
+        &nbsp;&nbsp;↳ <span class="t-cyan">hook executed</span>&nbsp;&nbsp;<span class="t-dim">0x87262bb1…de644c</span>
+      </div>
+      <div class="bigstat" style="margin-top:1.5rem">
+        <div><div class="n">1.5<span class="t-dim" style="font-size:.5em"> USDC</span></div><div class="k">moved</div></div>
+        <div><div class="n">5</div><div class="k">transactions</div></div>
+        <div><div class="n t-green">0</div><div class="k">mints by anyone else</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="inner">
+      <div class="kick">The instruction Circle would not run</div>
+      <h2 class="big">Carried by Circle. Executed by Berth.</h2>
+      <p class="say">The second transfer packed <span class="t-cyan">transfer(0x…dEaD, 500000)</span> into <span class="t-cyan">hookData</span>. Circle delivered it byte-identical and executed none of it — exactly as documented.</p>
+      <p class="say">Berth minted as the only permitted caller, then ran the instruction. <strong>The named recipient received exactly 500000.</strong></p>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="inner">
+      <div class="kick">A constraint we found, not assumed</div>
+      <h2 class="big">Exclusivity and atomicity are mutually exclusive.</h2>
+      <p class="say">We expected to deliver mint-and-hook in one transaction. We cannot. KeeperHub's batch path routes through Multicall3's <span class="t-cyan">aggregate3</span>, which forwards each call — so <span class="t-yellow">msg.sender</span> becomes Multicall3 and the gate refuses it.</p>
+      <div class="codeblk">
+        direct&nbsp;&nbsp;&nbsp;&nbsp;→ <span class="t-green">admitted</span><br>
+        batched&nbsp;&nbsp;&nbsp;→ <span class="t-red">Invalid caller for message</span>
+      </div>
+      <p class="say" style="margin-top:1.25rem">Same call, same wallet. The gate is real enough to break our own design.</p>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="inner">
+      <div class="kick">Do not trust us</div>
+      <h2 class="big">Verify every claim yourself.</h2>
+      <div class="codeblk">
+        $ npm run verify<br>
+        &nbsp;&nbsp;<span class="t-green">24 ok&nbsp;&nbsp;&nbsp;0 FAILED</span>&nbsp;&nbsp;<span class="t-dim">no wallet, no key, no credentials</span><br><br>
+        $ npm run verify:tamper<br>
+        &nbsp;&nbsp;<span class="t-green">7/7 lies detected</span>&nbsp;&nbsp;<span class="t-dim">the verifier is shown to fail</span>
+      </div>
+      <p class="say" style="margin-top:1.5rem">Both run in CI on every push and daily, because these claims describe live chain state and can go stale without a commit.</p>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="inner">
+      <div class="kick">What is not true yet</div>
+      <h2 class="big">Stated before you ask.</h2>
+      <p class="say"><strong>Testnet only</strong>, against production CCTP contracts. Gas was always sponsored; the self-funded path is untested.</p>
+      <p class="say"><strong>Exclusivity is about callers, not custody.</strong> We did not find a way to prove the key is non-exportable, so we do not claim it.</p>
+      <p class="say"><strong>Hook delivery is two transactions</strong> and nothing retries if the second fails. Two transfers is not a corpus, so we claim nothing about throughput.</p>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="inner">
+      <div class="kick">Berth</div>
+      <h2 class="big">The burn is irreversible. The mint is exclusive.</h2>
+      <p class="say mono-xl"><span class="t-dim">site&nbsp;&nbsp;&nbsp;</span> berth-phi.vercel.app<br><span class="t-dim">code&nbsp;&nbsp;&nbsp;</span> github.com/Cassxbt/berth<br><span class="t-dim">proof&nbsp;&nbsp;</span> berth-phi.vercel.app/proof</p>
+    </div>
+  </section>
+
+</div>
+
+<div class="hint" id="hint">← → to move · F fullscreen</div>
+<div class="deck-nav">
+  <button id="prev" aria-label="Previous slide">←</button>
+  <button id="next" aria-label="Next slide">→</button>
+  <div class="bar"><i id="deckbar"></i></div>
+  <div class="num" id="num">1 / 13</div>
+</div>
+
+<script src="deck.js"></script>
+</body>
+</html>
