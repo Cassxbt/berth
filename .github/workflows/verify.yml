@@ -1,0 +1,38 @@
+name: verify
+
+on:
+  push:
+  pull_request:
+  schedule:
+    # The claims are about live chain state, so re-check them even when nothing lands.
+    - cron: "17 6 * * *"
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - run: npm ci
+      - run: npm test
+
+  claims:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - run: npm ci
+      - name: verify claims against live chain state
+        run: |
+          set +e
+          npm run verify
+          code=$?
+          set -e
+          # 0 every claim holds, 1 a claim is false, 2 the RPC or Circle was unreachable.
+          # A transport failure is not evidence that the README is wrong.
+          if [ $code -eq 2 ]; then echo "::warning::transport failure, claims not evaluated"; exit 0; fi
+          exit $code
+      - name: prove the verifier can fail
+        run: npm run verify:tamper
