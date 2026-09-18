@@ -13,6 +13,8 @@ const mutations: Array<{ name: string; apply: (c: any) => void }> = [
   { name: "claims the mint has not executed", apply: (c) => { c.expectMinted = false; } },
   { name: "probes the permitted caller, expecting a refusal", apply: (c) => { c.probeCallers = [c.wallet]; } },
   { name: "wrong inner selector for the burn", apply: (c) => { c.burn.innerSelector = "0xdeadbeef"; } },
+  { name: "claims a hook recipient that never received it", apply: (c) => { c.hookTransfer.hookRecipient = "0x000000000000000000000000000000000000bEEF"; } },
+  { name: "inflates the hooked amount", apply: (c) => { c.hookTransfer.amount = String(BigInt(c.hookTransfer.amount) + 1n); } },
 ];
 
 const base = JSON.parse(readFileSync(new URL("../claims.json", import.meta.url), "utf8"));

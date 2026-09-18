@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { CHAINS, CCTP, KEEPERHUB, byDomain } from "../src/config/chains.ts";
 import { decodeSponsoredExecution } from "../src/keeperhub/decode.ts";
 import { decodeMessage, addressFromBytes32, ANY_CALLER } from "../src/cctp/message.ts";
+import { decodeAbiParameters, parseAbiParameters } from "viem";
 import { fetchAttestation, isAttested, IrisUnavailable } from "../src/cctp/iris.ts";
 
 const claimsPath = process.env.BERTH_CLAIMS
@@ -259,6 +260,37 @@ try {
     batchInner === "Invalid caller for message" ? null
       : fail("Invalid caller for message", batchInner, "aggregate3 from the permitted wallet",
              "Multicall3 no longer rewrites msg.sender, which would change the delivery design"));
+
+  // Group 6 — the hook: Circle carries it and refuses to run it; Berth runs it.
+  const ht = claims.hookTransfer;
+  const hookAttested = await fetchAttestation(6, ht.burnTx);
+  const hookMsg = decodeMessage(hookAttested.message);
+
+  check("A20", "the delivered message carries an executable instruction Circle did not run", () => {
+    const [target, call] = decodeAbiParameters(parseAbiParameters("address, bytes"), hookMsg.body.hookData);
+    return eq(target, ht.hookTarget) && eq(slice(call, 0, 4), ht.hookSelector) ? null
+      : fail(`${ht.hookTarget} ${ht.hookSelector}`, `${target} ${slice(call, 0, 4)}`, "hookData in the attested message",
+             "the instruction that crossed is not the one we claim");
+  });
+
+  const hookTx = await mintClient.getTransaction({ hash: ht.hookTx });
+  const hookExec = decodeSponsoredExecution({ to: hookTx.to, input: hookTx.input });
+  check("A21", "Berth executed that instruction through KeeperHub", () =>
+    eq(hookExec.account, claims.wallet) && eq(hookExec.target, ht.hookTarget) && eq(hookExec.innerSelector, ht.hookSelector)
+      ? null : fail(`${claims.wallet} -> ${ht.hookTarget} ${ht.hookSelector}`,
+                    `${hookExec.account} -> ${hookExec.target} ${hookExec.innerSelector}`,
+                    "decoded hook execution", "the hook was not run by the KeeperHub wallet"));
+
+  const hookRcpt = await mintClient.getTransactionReceipt({ hash: ht.hookTx });
+  check("A22", "the hooked amount reached the recipient the instruction named", () => {
+    const TRANSFER = keccak256(new TextEncoder().encode("Transfer(address,address,uint256)"));
+    const moved = hookRcpt.logs.find((l) =>
+      eq(l.address, ht.hookTarget) && eq(l.topics[0] ?? "", TRANSFER) &&
+      eq(slice(l.topics[2] ?? "0x", 12), ht.hookRecipient));
+    return moved && BigInt(moved.data) === BigInt(ht.amount) ? null
+      : fail(`${ht.amount} to ${ht.hookRecipient}`, moved ? String(BigInt(moved.data)) : "no matching Transfer",
+             "hook transaction logs", "the instruction did not move what it said it would");
+  });
 
   console.log(`\n${passed} ok   ${failures.length} FAILED`);
   process.exit(failures.length ? 1 : 0);

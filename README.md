@@ -4,7 +4,7 @@
 
 [![verify](https://github.com/Cassxbt/berth/actions/workflows/verify.yml/badge.svg)](https://github.com/Cassxbt/berth/actions/workflows/verify.yml)
 ![tests](https://img.shields.io/badge/tests-6%20passing-informational)
-![assertions](https://img.shields.io/badge/live%20assertions-21-informational)
+![assertions](https://img.shields.io/badge/live%20assertions-24-informational)
 ![network](https://img.shields.io/badge/Base%20Sepolia%20%E2%86%92%20Ethereum%20Sepolia-CCTP%20V2-informational)
 ![license](https://img.shields.io/badge/license-MIT-informational)
 
@@ -51,7 +51,9 @@ cast call 0xE737e5cEBEEBa77EFE34D4aa090756590b1CE275 "receiveMessage(bytes,bytes
 
 The second call reverts differently because the mint already happened. Before it, that same call returned `true`. The caller check sits **above** the nonce check in `_validateReceivedMessage`, so the gate keeps refusing every other address permanently — settling the transfer did not erase the proof.
 
-**4. Check the whole claim yourself.** `npm run verify` — 21 assertions, no credentials.
+**3b. The instruction Circle would not run.** A second transfer carried `transfer(0x…dEaD, 500000)` inside `hookData`. Circle delivered it untouched and did not execute it. Berth minted ([`0x7c3d7cc6…`](https://sepolia.etherscan.io/tx/0x7c3d7cc67e6c9c71366615e54f4507600f545688dd73aa4d59ff2198c60dd2db)) and then ran it ([`0x87262bb1…`](https://sepolia.etherscan.io/tx/0x87262bb14d9bf60244762c8528421ee884e8466fda5b46332e0aa4026ede644c)). Assertions A20 to A22 check the instruction, its execution, and that the named recipient received exactly 500000.
+
+**4. Check the whole claim yourself.** `npm run verify` — 24 assertions, no credentials.
 
 ## npm run verify
 
@@ -81,8 +83,11 @@ Ethereum Sepolia  head=11728684
 [ok]   A17  wallet is an EIP-7702 delegated account on both chains
 [ok]   A18  forwarder is the same deployed code on both chains
 [ok]   A19  batching through Multicall3 breaks the gate, so atomic mint-plus-hook is not available
+[ok]   A20  the delivered message carries an executable instruction Circle did not run
+[ok]   A21  Berth executed that instruction through KeeperHub
+[ok]   A22  the hooked amount reached the recipient the instruction named
 
-21 ok   0 FAILED
+24 ok   0 FAILED
 ```
 
 Every number and address in this README is an assertion in `claims.json`. **If the README and the verifier disagree, the verifier is right.** A failing assertion prints claim, observed, source, and what it means, so a reader can tell whether the code is wrong or the claim is.
@@ -107,14 +112,16 @@ Both run in CI on every push and on a daily schedule, because these claims descr
 
 | | |
 |---|---|
-| Value moved through the gate | 1.000000 USDC (`amount = 1000000`, 6 decimals) |
+| Transfers completed end to end | 2 |
+| Value moved through the gate | 1.500000 USDC across both |
+| Hook instructions Circle declined to run, that Berth ran | 1 |
 | Mints by any address other than the KeeperHub wallet | **0 — not permitted, not merely not attempted** |
 | Distinct addresses shown to be refused, live | 3 |
-| Live assertions, no credentials required | 21 |
-| Deliberate lies the verifier catches | 5 of 5 |
+| Live assertions, no credentials required | 24 |
+| Deliberate lies the verifier catches | 7 of 7 |
 | Unit tests, offline against committed fixtures | 6 |
 | Chains the KeeperHub decoder handles | 2, same forwarder code on both (asserted, A18) |
-| Completed transfers | **1.** Anything said about throughput would be projected, so nothing is said about it. |
+| Throughput | **Not measured.** Two transfers is not a corpus, so nothing is claimed about it. |
 
 ## KeeperHub surfaces used
 
@@ -172,7 +179,7 @@ graph LR
 | Network | Testnet only, Base Sepolia to Ethereum Sepolia. The value is testnet value; the contracts, addresses and enforcement are the production CCTP V2 deployments. |
 | Gas | Every execution was sponsored by KeeperHub. The wallet holds 0 ETH and has never paid for its own gas, so the self-funded path is untested. |
 | The exclusivity claim | Enforced against **on-chain callers**: no address other than `0x3db6f359…0cb2` can call `receiveMessage` for this message, and Circle's contract enforces it. It is **not** a claim about key custody. The wallet is a Turnkey-held EOA; a holder of that private key could mint without KeeperHub's execution path. We have not verified the key is non-exportable and do not claim it. What is proven is that the permitted caller set has size one. |
-| The hook | The hook travelled end to end and is readable in the delivered message. **It has not been executed yet.** Atomic delivery turned out to be unavailable (see [Why no contract](#why-no-contract)), so the hook must run as a second transaction after the mint. That path is unbuilt. Berth proves exclusive permission and carries the instruction; it does not yet run it. |
+| The hook | Executed, in a **second transaction** after the mint, not atomically with it. Atomic delivery is unavailable (see [Why no contract](#why-no-contract)). If a mint lands and the hook then fails, the USDC is minted and the instruction is not executed; that recovery path is unbuilt. The non-atomicity is bounded rather than open-ended, because no other address is permitted to mint in between. |
 | The decoder | The forwarder's blob layout is undocumented and was derived by observation across executions on two chains. A forwarder upgrade would invalidate it, and the verifier is written to fail loudly rather than decode garbage. |
 | Scale | One transfer. The refusal path is reproducible without limit; the execution path is n=1. |
 
@@ -184,7 +191,7 @@ A testnet can show the mechanism holds. Only a mainnet burn would put something 
 git clone https://github.com/Cassxbt/berth && cd berth
 npm install
 npm test              # 6 offline tests against committed fixtures
-npm run verify        # 21 live assertions, no credentials of any kind
+npm run verify        # 24 live assertions, no credentials of any kind
 npm run verify:tamper # proves the verifier can fail
 npm run decode -- ethSepolia 0xf69a9b4f4b8e685c7ed2e6d693358bcfdb2fab57521bf1b247d3b75ecaa6690a
 ```
@@ -193,7 +200,7 @@ Only `npm run verify` needs the network, and it needs nothing else: no API key, 
 
 ## What still breaks
 
-1. **The hook is carried, not executed.** We expected to deliver mint-and-hook atomically and found we cannot: batching rewrites `msg.sender` and the gate refuses it (A19). Delivery has to be two transactions, and the second one is unbuilt. If the mint lands and the hook then fails, the USDC is minted and the instruction is not executed — that recovery path does not exist yet.
+1. **Hook delivery is not atomic, and the recovery path is unbuilt.** We expected to deliver mint-and-hook in one transaction and found we cannot: batching rewrites `msg.sender` and the gate refuses it (A19). Delivery is two transactions. If the mint lands and the hook then fails, the USDC is minted and the instruction is not executed, and nothing retries it.
 2. **`POST /api/execute/contract-call` is not gas-sponsored while the workflow executor is.** The direct call failed with `Insufficient ETH balance. Have: 0.0` against a wallet that has executed many sponsored writes. The docs say writes "may be gas-sponsored" without saying which paths qualify. Filed upstream.
 3. **The Write Contract UI could not carry a 890-byte `bytes` argument.** Typed input silently lost 128 characters, a retry added 7, a workflow JSON import did not overwrite the node and reported no error, and clearing the field with Backspace deleted the node from the canvas. The mint was ultimately executed by writing the node config through the REST API and verifying it by read-back. Filed upstream.
 4. **Exclusivity is about callers, not custody.** See the honesty table. We looked for a way to prove Turnkey key non-exportability from outside and did not find one.
@@ -206,7 +213,7 @@ Only `npm run verify` needs the network, and it needs nothing else: no API key, 
 src/keeperhub/decode.ts   reconstructs any KeeperHub execution from a tx hash
 src/cctp/message.ts       CCTP V2 codec, offsets taken from Circle's contracts
 src/cctp/iris.ts          Circle attestation client
-scripts/verify.ts         the 21 assertions
+scripts/verify.ts         the 24 assertions
 scripts/tamper.ts         proves the verifier fails on a false claim
 fixtures/                 both copies of the live transfer, on-chain and attested
 ```

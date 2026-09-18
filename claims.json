@@ -19,5 +19,16 @@
     "0x000000000000000000000000000000000000dEaD",
     "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
     "0x0000000000000000000000000000000000000001"
-  ]
+  ],
+  "hookTransfer": {
+    "_": "Second transfer. Same gate, plus the hook instruction actually executed.",
+    "burnTx": "0xedb9bce11388cb44fd92f76f75da7077d6e4d7595ff8040058d76299ef7b8594",
+    "mintTx": "0x7c3d7cc67e6c9c71366615e54f4507600f545688dd73aa4d59ff2198c60dd2db",
+    "hookTx": "0x87262bb14d9bf60244762c8528421ee884e8466fda5b46332e0aa4026ede644c",
+    "eventNonce": "0x1cff5abb70480e39fc89ad35a3f54ab51d50c92912cee33820d5d763956acae8",
+    "amount": "500000",
+    "hookTarget": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+    "hookRecipient": "0x000000000000000000000000000000000000dEaD",
+    "hookSelector": "0xa9059cbb"
+  }
 }
