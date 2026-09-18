@@ -226,6 +226,40 @@ try {
     fwdBase && fwdEth && keccak256(fwdBase) === keccak256(fwdEth) ? null
       : fail("identical codehash", `${fwdBase && keccak256(fwdBase)} vs ${fwdEth && keccak256(fwdEth)}`, "keccak of eth_getCode", "one chain runs a different forwarder, so the decoder may not apply to both"));
 
+  // A19 — a second, independent proof that the gate is real: routing the very
+  // same call through Multicall3 changes msg.sender and the gate refuses it.
+  const MULTICALL3 = "0xcA11bde05977b3631167028862bE2a173976CA11" as Hex;
+  const aggregate3 = encodeFunctionData({
+    abi: [{
+      inputs: [{ components: [
+        { name: "target", type: "address" }, { name: "allowFailure", type: "bool" }, { name: "callData", type: "bytes" },
+      ], name: "calls", type: "tuple[]" }],
+      name: "aggregate3",
+      outputs: [{ components: [{ name: "success", type: "bool" }, { name: "returnData", type: "bytes" }], name: "returnData", type: "tuple[]" }],
+      stateMutability: "payable", type: "function",
+    }] as const,
+    functionName: "aggregate3",
+    args: [[{ target: CCTP.messageTransmitterV2 as Hex, allowFailure: true, callData: receiveCalldata }]],
+  });
+
+  let batchInner = "call unexpectedly succeeded";
+  try {
+    const res = await mintClient.call({ account: lower(claims.wallet), to: MULTICALL3, data: aggregate3 });
+    const hex = res.data ?? "0x";
+    const m = /08c379a0([0-9a-fA-F]+)/.exec(hex);
+    if (m?.[1]) {
+      const len = Number(BigInt("0x" + m[1].slice(64, 128)));
+      batchInner = Buffer.from(m[1].slice(128, 128 + len * 2), "hex").toString("utf8");
+    }
+  } catch (err) {
+    batchInner = revertStringOf(err) ?? "reverted without a decodable reason";
+  }
+
+  check("A19", "batching through Multicall3 breaks the gate, so atomic mint-plus-hook is not available", () =>
+    batchInner === "Invalid caller for message" ? null
+      : fail("Invalid caller for message", batchInner, "aggregate3 from the permitted wallet",
+             "Multicall3 no longer rewrites msg.sender, which would change the delivery design"));
+
   console.log(`\n${passed} ok   ${failures.length} FAILED`);
   process.exit(failures.length ? 1 : 0);
 } catch (err) {
