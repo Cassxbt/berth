@@ -223,41 +223,85 @@ define("A12", "batching through Multicall3 breaks the gate", async () => {
 function render() {
   if (!rowsEl) return;
   rowsEl.innerHTML = checks.map((c) =>
-    `<tr><td class="mono">${c.id}</td><td>${c.label}</td><td><span class="state pending" id="s-${c.id}">—</span></td></tr>`
+    `<tr id="r-${c.id}"><td>${c.id}</td><td>${c.label}</td><td><span class="state pending" id="s-${c.id}">—</span></td></tr>`
   ).join("");
+}
+
+const statusEl = () => document.getElementById("status");
+const barEl = () => document.querySelector("#progress > i");
+
+function setStatus(cls, text) {
+  const el = statusEl();
+  if (!el) return;
+  el.className = `status ${cls}`;
+  el.querySelector("span").textContent = text;
 }
 
 async function runAll() {
   const btn = document.getElementById("run");
-  btn.disabled = true; btn.textContent = "Verifying…";
-  tallyEl.textContent = "running";
-  tallyEl.className = "tally mono";
-  let ok = 0, bad = 0;
+  btn.disabled = true;
+  btn.textContent = "Verifying…";
+
+  // Put the work on screen. A check nobody watches is a check nobody believes.
+  document.getElementById("assertions-anchor")?.scrollIntoView({ behavior: "smooth", block: "start" });
+
+  if (tallyEl) { tallyEl.textContent = ""; tallyEl.className = "tally mono"; }
+  checks.forEach((c) => {
+    const el = document.getElementById(`s-${c.id}`);
+    if (el) { el.textContent = "—"; el.className = "state pending"; }
+  });
+
+  let ok = 0, bad = 0, done = 0;
+  setStatus("busy", `0 / ${checks.length}`);
 
   for (const c of checks) {
+    const row = document.getElementById(`r-${c.id}`);
     const el = document.getElementById(`s-${c.id}`);
-    el.textContent = "…"; el.className = "state pending";
+    row?.classList.add("live");
+    if (el) { el.textContent = "running"; el.className = "state pending"; }
+    setStatus("busy", `${c.id} · ${done} / ${checks.length}`);
+
     try {
       const detail = await c.fn();
-      el.textContent = detail || "ok"; el.className = "state pass"; ok++;
+      if (el) { el.textContent = detail || "ok"; el.className = "state pass"; }
+      ok++;
     } catch (err) {
-      el.textContent = (err.message || "failed").slice(0, 48); el.className = "state fail"; bad++;
+      if (el) { el.textContent = (err.message || "failed").slice(0, 44); el.className = "state fail"; }
+      bad++;
     }
+
+    done++;
+    row?.classList.remove("live");
+    const bar = barEl();
+    if (bar) bar.style.width = `${(done / checks.length) * 100}%`;
+    await new Promise((r) => setTimeout(r, 90));
   }
 
-  tallyEl.textContent = `${ok} ok   ${bad} failed`;
-  tallyEl.className = `tally mono ${bad ? "fail" : "pass"}`;
-  btn.disabled = false; btn.textContent = bad ? "Re-run" : "Verified — run again";
+  if (tallyEl) {
+    tallyEl.textContent = `${ok} ok   ${bad} failed`;
+    tallyEl.className = `tally mono ${bad ? "fail" : "pass"}`;
+  }
+  setStatus(bad ? "bad" : "ok", bad ? `${bad} failed` : `${ok} / ${checks.length} verified`);
+  btn.disabled = false;
+  btn.textContent = bad ? "Re-run" : "Run again";
 }
 
 async function runProbe() {
   const btn = document.getElementById("probe");
   btn.disabled = true; btn.textContent = "Calling…";
+
+  for (const id of ["out-outsider", "out-permitted"]) {
+    const el = document.getElementById(id);
+    el.innerHTML = '<span class="state pending">calling…</span>';
+    el.parentElement.classList.add("hit");
+  }
+
   const m = await attestation(TX.burn1);
   const data = receiveCalldata(m.message, m.attestation);
 
   for (const [who, from, id] of [["outsider", A.sink, "out-outsider"], ["permitted", A.wallet, "out-permitted"]]) {
     const el = document.getElementById(id);
+    await new Promise((r) => setTimeout(r, 260));
     try {
       const res = await rpc(RPC.eth, "eth_call", [{ from, to: A.transmitter, data }, "latest"]);
       el.innerHTML = `<span class="state pass">returned ${BigInt(res) === 1n ? "true" : res}</span>`;
@@ -266,6 +310,7 @@ async function runProbe() {
       const cls = who === "outsider" ? "fail" : "pending";
       el.innerHTML = `<span class="state ${cls}">reverted</span> ${reason}`;
     }
+    el.parentElement.classList.remove("hit");
   }
   btn.disabled = false; btn.textContent = "Run both again";
 }

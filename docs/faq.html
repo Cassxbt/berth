@@ -5,14 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>FAQ — Berth</title>
 <meta name="description" content="Direct answers about what Berth is, what enforces it, and where it stops.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div class="nav"><div class="wrap nav-inner">
-  <a class="brand" href="./">Berth</a>
+  <a class="brand" href="./"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 3H4.5A1.5 1.5 0 0 0 3 4.5v15A1.5 1.5 0 0 0 4.5 21H15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><rect x="8" y="9" width="6" height="6" rx="1" fill="#46d39a"/></svg><span>Berth</span></a>
   <nav class="nav-links">
     <a href="./" data-p="index">Overview</a>
     <a href="mechanism.html" data-p="mechanism">Mechanism</a>
@@ -24,13 +25,13 @@
 
 <main class="wrap">
 
-  <section class="hero" style="padding-top:clamp(2.5rem,6vw,4.5rem)">
+  <section class="r hero" style="padding-top:clamp(2.5rem,6vw,4.5rem)">
     <div class="eyebrow">FAQ</div>
     <h1>The questions a reviewer asks.</h1>
     <p class="lead claim">Including the ones that are least comfortable to answer.</p>
   </section>
 
-  <section>
+  <section class="r">
     <h2>The mechanism</h2>
 
     <details><summary>Isn't this just a bridge transfer?</summary><div class="body">
@@ -93,5 +94,6 @@
     if (a.dataset.p === p) a.setAttribute("aria-current", "page");
   });
 </script>
+<script src="motion.js"></script>
 </body>
 </html>

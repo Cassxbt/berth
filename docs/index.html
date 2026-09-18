@@ -5,14 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Berth — exclusive cross-chain delivery</title>
 <meta name="description" content="A CCTP burn only one address is permitted to complete, and that address is a KeeperHub wallet.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div class="nav"><div class="wrap nav-inner">
-  <a class="brand" href="./">Berth</a>
+  <a class="brand" href="./"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 3H4.5A1.5 1.5 0 0 0 3 4.5v15A1.5 1.5 0 0 0 4.5 21H15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><rect x="8" y="9" width="6" height="6" rx="1" fill="#46d39a"/></svg><span>Berth</span></a>
   <nav class="nav-links">
     <a href="./" data-p="index">Overview</a>
     <a href="mechanism.html" data-p="mechanism">Mechanism</a>
@@ -24,7 +25,7 @@
 
 <main class="wrap">
 
-  <section class="hero">
+  <section class="r hero">
     <div class="eyebrow">Berth · Circle CCTP V2 × KeeperHub</div>
     <h1>The window where the money exists nowhere.</h1>
     <p class="lead claim">A CCTP burn is irreversible the moment it lands. From that block until someone calls <code>receiveMessage</code> on the destination chain, the USDC exists on neither chain — and by default <strong>any address may be the one to call it</strong>. Berth closes that window to one address.</p>
@@ -35,7 +36,7 @@
     </div>
   </section>
 
-  <section>
+  <section class="r">
     <h2>What Berth is</h2>
     <div class="split">
       <div class="aside">
@@ -51,7 +52,7 @@
     </div>
   </section>
 
-  <section>
+  <section class="r">
     <h2>What it is for</h2>
     <div class="grid-2">
       <div>
@@ -73,7 +74,7 @@
     </div>
   </section>
 
-  <section>
+  <section class="r">
     <h2>Proven, not asserted</h2>
     <p class="kicker">Two complete transfers, five transactions, all executed through KeeperHub and all gas-sponsored. Every figure on this site is read from chain when you load the proof page.</p>
     <dl class="facts" id="facts"></dl>
@@ -93,5 +94,6 @@
     if (a.dataset.p === p) a.setAttribute("aria-current", "page");
   });
 </script>
+<script src="motion.js"></script>
 </body>
 </html>
